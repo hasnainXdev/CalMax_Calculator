@@ -7,6 +7,7 @@ import { MacroBar } from '@/components/MacroBar';
 import { FoodForm } from '@/components/FoodForm';
 import { ChallengesPanel } from '@/components/ChallengesPanel';
 import { StatsGrid } from '@/components/StatsGrid';
+import { ProCalculator } from '@/components/ProCalculator';
 import { NotifToast } from '@/components/NotifToast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,10 +117,11 @@ export default function Home() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="tracker" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tracker">Tracker</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="calcPro">Calc Pro</TabsTrigger>
           </TabsList>
 
           {/* Tracker Tab */}
@@ -206,6 +208,15 @@ export default function Home() {
             <Card className="bg-card/50 backdrop-blur border-border">
               <CardContent className="pt-6">
                 <StatsGrid dayLogs={dayLogs} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Calc Pro Tab */}
+          <TabsContent value="calcPro">
+            <Card className="bg-card/50 backdrop-blur border-border">
+              <CardContent className="pt-6">
+                <ProCalculator />
               </CardContent>
             </Card>
           </TabsContent>
