@@ -13,6 +13,9 @@ import {
   getTodayString,
   createEmptyDayLog,
   LEVELS,
+  UserProfile,
+  createUserProfile,
+  GenderType,
 } from '@/lib/store';
 
 interface GameStore extends GameState {
@@ -23,6 +26,8 @@ interface GameStore extends GameState {
   dismissNotification: (notificationId: string) => void;
   getTodayLog: () => import('@/lib/store').DayLog;
   resetDay: () => void;
+  setProfile: (age: number, weight: number, height: number, gender: GenderType, goal: import('@/lib/store').GoalType) => void;
+  updateProfile: (profile: Partial<UserProfile>) => void;
 }
 
 function generateId(): string {
@@ -220,6 +225,45 @@ export const useGameStore = create<GameStore>()(
           },
         });
       },
+
+      setProfile: (age, weight, height, gender, goal) => {
+        const state = get();
+        const profile = createUserProfile(age, weight, height, gender, goal);
+        
+        // Update calorie goal if profile doesn't exist yet
+        const shouldUpdateCalorieGoal = !state.profile;
+        
+        set({
+          ...state,
+          profile,
+          calorieGoal: shouldUpdateCalorieGoal ? profile.dailyCalorieNeed : state.calorieGoal,
+        });
+      },
+
+      updateProfile: (profileUpdate) => {
+        const state = get();
+        if (!state.profile) return;
+        
+        const updatedProfile = { ...state.profile, ...profileUpdate };
+        
+        // Recalculate needs if age, weight, height, gender, or goal changed
+        if (profileUpdate.age || profileUpdate.weight || profileUpdate.height || profileUpdate.gender || profileUpdate.goal) {
+          const needs = createUserProfile(
+            profileUpdate.age || state.profile.age,
+            profileUpdate.weight || state.profile.weight,
+            profileUpdate.height || state.profile.height,
+            profileUpdate.gender || state.profile.gender,
+            profileUpdate.goal || state.profile.goal
+          );
+          updatedProfile.dailyCalorieNeed = needs.dailyCalorieNeed;
+          updatedProfile.dailyProteinNeed = needs.dailyProteinNeed;
+        }
+        
+        set({
+          ...state,
+          profile: updatedProfile,
+        });
+      },
     }),
     {
       name: 'calmax-game-storage',
@@ -233,6 +277,7 @@ export const useGameStore = create<GameStore>()(
         calorieGoal: state.calorieGoal,
         challenges: state.challenges,
         dayLogs: state.dayLogs,
+        profile: state.profile,
       }),
     }
   )

@@ -9,11 +9,19 @@ import { ChallengesPanel } from '@/components/ChallengesPanel';
 import { StatsGrid } from '@/components/StatsGrid';
 import { ProCalculator } from '@/components/ProCalculator';
 import { NotifToast } from '@/components/NotifToast';
+import { ProfileCard } from '@/components/ProfileCard';
+import { ProfileSettings } from '@/components/ProfileSettings';
+import { ProfileForm } from '@/components/ProfileForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Flame, TrendingUp, Calendar, Target } from 'lucide-react';
+import { Flame, TrendingUp, Calendar, Target, User } from 'lucide-react';
+
+// Helper to get current date string for display
+const getCurrentDateDisplay = () => {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
 export default function Home() {
   const {
@@ -23,6 +31,7 @@ export default function Home() {
     challenges,
     dayLogs,
     calorieGoal,
+    profile,
     addEntry,
     removeEntry,
     setCalorieGoal,
@@ -104,10 +113,7 @@ export default function Home() {
               </div>
               <div>
                 <div className="text-lg font-bold">
-                  {todayLog.date 
-                    ? new Date(todayLog.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : '--'
-                  }
+                  {getCurrentDateDisplay()}
                 </div>
                 <div className="text-xs text-muted-foreground">Date</div>
               </div>
@@ -170,15 +176,29 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Calorie Goal Setting */}
+            {/* Settings */}
             <Card className="bg-card/50 backdrop-blur border-border">
               <CardHeader>
-                <CardTitle>Settings</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Settings & Profile
+                </CardTitle>
               </CardHeader>
-              <CardContent className="py-4">
-                <div className="space-y-4">
+              <CardContent className="py-4 space-y-6">
+                {/* Profile Section */}
+                {!profile ? (
+                  <div>
+                    <h4 className="font-semibold mb-3 text-sm">Setup Your Profile</h4>
+                    <ProfileForm />
+                  </div>
+                ) : (
+                  <ProfileSettings />
+                )}
+
+                {/* Calorie Goal Setting */}
+                <div className="pt-4 border-t border-border">
                   <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">Daily Calorie Goal</Label>
+                    <Label className="text-sm text-muted-foreground">Daily Calorie Goal (Manual Override)</Label>
                     <div className="flex gap-3 items-center">
                       <Input
                         type="number"
@@ -188,6 +208,9 @@ export default function Home() {
                       />
                       <span className="text-sm text-muted-foreground">kcal/day</span>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      This overrides your profile-based calorie goal
+                    </p>
                   </div>
                 </div>
               </CardContent>

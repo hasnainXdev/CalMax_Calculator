@@ -32,6 +32,19 @@ export interface Challenge {
   icon: string;
 }
 
+export type GoalType = 'muscle_gain' | 'weight_loss' | 'maintain' | 'general_fitness';
+export type GenderType = 'male' | 'female';
+
+export interface UserProfile {
+  age: number;
+  weight: number; // in kg
+  height: number; // in cm
+  gender: GenderType;
+  goal: GoalType;
+  dailyCalorieNeed: number;
+  dailyProteinNeed: number;
+}
+
 export interface GameState {
   level: number;
   xp: number;
@@ -43,6 +56,7 @@ export interface GameState {
   challenges: Challenge[];
   dayLogs: Record<string, DayLog>;
   notifications: Notification[];
+  profile: UserProfile | null;
 }
 
 export interface Notification {
@@ -135,6 +149,7 @@ export function createInitialState(): GameState {
     challenges: INITIAL_CHALLENGES.map(c => ({ ...c })),
     dayLogs: {},
     notifications: [],
+    profile: null,
   };
 }
 
@@ -228,5 +243,70 @@ export function createEmptyDayLog(date: string, calorieGoal: number): DayLog {
     totalFat: 0,
     calorieGoal,
     xpEarned: 0,
+  };
+}
+
+// Calculate daily calorie and protein needs based on user profile
+// Uses Mifflin-St Jeor Equation (most accurate per 2025 research)
+export function calculateDailyNeeds(
+  age: number,
+  weight: number,
+  height: number,
+  gender: GenderType,
+  goal: GoalType
+): { calories: number; protein: number } {
+  // BMR calculation using Mifflin-St Jeor Equation
+  // Men: BMR = (10 × weight in kg) + (6.25 × height in cm) − (5 × age in years) + 5
+  // Women: BMR = (10 × weight in kg) + (6.25 × height in cm) − (5 × age in years) − 161
+  const bmr = gender === 'male'
+    ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+    : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+
+  // Activity multiplier (sedentary to lightly active)
+  const activityMultiplier = 1.375;
+  const tdee = bmr * activityMultiplier;
+
+  // Adjust based on goal
+  let calories: number;
+  let protein: number;
+
+  switch (goal) {
+    case 'muscle_gain':
+      calories = Math.round(tdee + 300); // Calorie surplus
+      protein = Math.round(weight * 2.0); // 2g per kg bodyweight (research-backed for muscle gain)
+      break;
+    case 'weight_loss':
+      calories = Math.round(tdee - 500); // Calorie deficit (0.5kg/week loss)
+      protein = Math.round(weight * 1.8); // Higher protein for satiety & muscle preservation
+      break;
+    case 'maintain':
+      calories = Math.round(tdee);
+      protein = Math.round(weight * 1.6); // Maintenance level
+      break;
+    case 'general_fitness':
+      calories = Math.round(tdee);
+      protein = Math.round(weight * 1.5); // General health
+      break;
+  }
+
+  return { calories, protein };
+}
+
+export function createUserProfile(
+  age: number,
+  weight: number,
+  height: number,
+  gender: GenderType,
+  goal: GoalType
+): UserProfile {
+  const { calories, protein } = calculateDailyNeeds(age, weight, height, gender, goal);
+  return {
+    age,
+    weight,
+    height,
+    gender,
+    goal,
+    dailyCalorieNeed: calories,
+    dailyProteinNeed: protein,
   };
 }

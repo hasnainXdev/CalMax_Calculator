@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Nut, DollarSign, Zap, Weight, Dumbbell, TrendingDown, Award, Target, Flame } from 'lucide-react';
+import { Nut, DollarSign, Zap, Weight, Dumbbell, TrendingDown, Award, Target, Flame, Ruler } from 'lucide-react';
+import { useGameStore } from '@/hooks/useGameStore';
+import { ProfileForm } from '@/components/ProfileForm';
 
 interface FoodItem {
   name: string;
@@ -17,79 +19,92 @@ interface FoodItem {
 }
 
 const foodItems: FoodItem[] = [
-  { 
-    name: 'Peanut Butter', 
-    pricePerUnit: 1.8, 
-    unit: 'g', 
-    caloriesPerUnit: 5.88, 
-    proteinPerUnit: 0.25, 
+  {
+    name: 'Peanut Butter',
+    pricePerUnit: 1.8,
+    unit: 'g',
+    caloriesPerUnit: 5.88, // 588 cal/100g (USDA)
+    proteinPerUnit: 0.25, // 25g/100g (USDA)
     icon: '🥜',
     muscleGainScore: 7,
     costEffectiveness: 0.139
   },
-  { 
-    name: 'Bananas', 
-    pricePerUnit: 20, 
-    unit: 'piece', 
-    caloriesPerUnit: 105, 
-    proteinPerUnit: 1.3, 
+  {
+    name: 'Bananas',
+    pricePerUnit: 20,
+    unit: 'piece',
+    caloriesPerUnit: 105, // 105 cal/medium banana (USDA)
+    proteinPerUnit: 1.3, // 1.3g/medium banana (USDA)
     icon: '🍌',
     muscleGainScore: 5,
     costEffectiveness: 0.065
   },
-  { 
-    name: 'Dates', 
-    pricePerUnit: 0.5, 
-    unit: 'piece', 
-    caloriesPerUnit: 23, 
-    proteinPerUnit: 0.2, 
+  {
+    name: 'Dates',
+    pricePerUnit: 0.5,
+    unit: 'piece',
+    caloriesPerUnit: 66, // 66 cal/Medjool date (USDA) - FIXED from 23
+    proteinPerUnit: 0.4, // 0.4g/date (USDA) - FIXED from 0.2
     icon: '🌴',
     muscleGainScore: 4,
-    costEffectiveness: 0.4
+    costEffectiveness: 0.8
   },
-  { 
-    name: 'Almonds', 
-    pricePerUnit: 4, 
-    unit: 'g', 
-    caloriesPerUnit: 5.79, 
-    proteinPerUnit: 0.21, 
+  {
+    name: 'Almonds',
+    pricePerUnit: 4,
+    unit: 'g',
+    caloriesPerUnit: 5.79, // 579 cal/100g (USDA)
+    proteinPerUnit: 0.21, // 21g/100g (USDA)
     icon: '🌰',
     muscleGainScore: 7,
     costEffectiveness: 0.053
   },
-  { 
-    name: 'Milk', 
-    pricePerUnit: 0.9, 
-    unit: 'cup (250ml)', 
-    caloriesPerUnit: 155, 
-    proteinPerUnit: 8, 
+  {
+    name: 'Milk',
+    pricePerUnit: 0.9,
+    unit: 'cup (250ml)',
+    caloriesPerUnit: 149, // 149 cal/cup (USDA) - FIXED from 155
+    proteinPerUnit: 8, // 8g/cup (USDA)
     icon: '🥛',
     muscleGainScore: 9,
     costEffectiveness: 8.89
   },
-  { 
-    name: 'Eggs', 
-    pricePerUnit: 35, 
-    unit: 'piece', 
-    caloriesPerUnit: 74, 
-    proteinPerUnit: 6.3, 
+  {
+    name: 'Eggs',
+    pricePerUnit: 35,
+    unit: 'piece',
+    caloriesPerUnit: 78, // 78 cal/large egg (USDA) - FIXED from 74
+    proteinPerUnit: 6.3, // 6.3g/egg (USDA) - FIXED from 6.3
     icon: '🥚',
     muscleGainScore: 10,
     costEffectiveness: 0.18
   },
 ];
 
-const USER_PROFILE = {
-  age: 17,
-  weight: 49,
-  goal: 'muscle_gain',
-  dailyCalorieNeed: 2400,
-  dailyProteinNeed: 98,
-};
-
 export function ProCalculator() {
+  const { profile } = useGameStore();
   const [budget, setBudget] = useState<number>(3000);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>(['Bananas', 'Dates', 'Almonds']);
+  const [showProfileForm, setShowProfileForm] = useState(false);
+
+  // Use profile from store or default values (with backward compatibility)
+  const userProfile = profile ? {
+    age: profile.age,
+    weight: profile.weight,
+    height: profile.height || 170, // Default for old profiles
+    gender: profile.gender || 'male', // Default for old profiles
+    goal: profile.goal,
+    dailyCalorieNeed: profile.dailyCalorieNeed,
+    dailyProteinNeed: profile.dailyProteinNeed,
+  } : {
+    age: 17,
+    weight: 49,
+    height: 170,
+    gender: 'male' as import('@/lib/store').GenderType,
+    goal: 'muscle_gain' as const,
+    dailyCalorieNeed: 2400,
+    dailyProteinNeed: 98,
+  };
 
   const calculateDistribution = () => {
     // Muscle gain optimized distribution
@@ -125,9 +140,9 @@ export function ProCalculator() {
   const totalProtein = distribution.reduce((sum, item) => sum + item.totalProtein, 0);
   const dailyCalories = Math.round(totalCalories / 30);
   const dailyProtein = (totalProtein / 30).toFixed(1);
-  
-  const calorieProgress = (dailyCalories / USER_PROFILE.dailyCalorieNeed) * 100;
-  const proteinProgress = (parseFloat(dailyProtein) / USER_PROFILE.dailyProteinNeed) * 100;
+
+  const calorieProgress = (dailyCalories / userProfile.dailyCalorieNeed) * 100;
+  const proteinProgress = (parseFloat(dailyProtein) / userProfile.dailyProteinNeed) * 100;
 
   const sortedByCostEffectiveness = [...distribution].sort((a, b) => b.costEffectiveness - a.costEffectiveness);
   const sortedByMuscleGain = [...distribution].sort((a, b) => b.muscleGainScore - a.muscleGainScore);
@@ -144,29 +159,47 @@ export function ProCalculator() {
   return (
     <div className="space-y-6">
       {/* Profile Header */}
-      <Card className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-primary/30">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Dumbbell className="h-6 w-6 text-primary" />
-            <div>
-              <h3 className="font-semibold">Your Profile</h3>
-              <p className="text-sm text-muted-foreground">
-                {USER_PROFILE.age} years • {USER_PROFILE.weight}kg • Muscle Gain Goal
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-orange-500" />
-              <span>Daily Calories: <strong>{USER_PROFILE.dailyCalorieNeed}</strong></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-500" />
-              <span>Daily Protein: <strong>{USER_PROFILE.dailyProteinNeed}g</strong></span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {!profile ? (
+        <ProfileForm onComplete={() => setShowProfileForm(false)} />
+      ) : (
+        <>
+          <Card className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-primary/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Dumbbell className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="font-semibold">Your Profile</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {userProfile.gender === 'male' ? '👨' : '👩'} {userProfile.age}yo • {userProfile.height}cm • {userProfile.weight}kg • {userProfile.goal.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowProfileForm(true)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Change
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span>Daily Calories: <strong>{userProfile.dailyCalorieNeed}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-500" />
+                  <span>Daily Protein: <strong>{userProfile.dailyProteinNeed}g</strong></span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {showProfileForm && (
+            <ProfileForm onComplete={() => setShowProfileForm(false)} />
+          )}
+        </>
+      )}
 
       {/* Budget Slider */}
       <Card className="bg-card/50 backdrop-blur border-border">
@@ -217,7 +250,7 @@ export function ProCalculator() {
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {calorieProgress.toFixed(0)}% of {USER_PROFILE.dailyCalorieNeed} goal
+              {calorieProgress.toFixed(0)}% of {userProfile.dailyCalorieNeed} goal
             </div>
           </CardContent>
         </Card>
@@ -238,7 +271,7 @@ export function ProCalculator() {
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {proteinProgress.toFixed(0)}% of {USER_PROFILE.dailyProteinNeed}g goal
+              {proteinProgress.toFixed(0)}% of {userProfile.dailyProteinNeed}g goal
             </div>
           </CardContent>
         </Card>
@@ -549,7 +582,7 @@ export function ProCalculator() {
           <div className="space-y-3">
             <h4 className="font-semibold text-primary flex items-center gap-2">
               <Dumbbell className="h-4 w-4" />
-              Tips for Your Goals (17yo, 49kg)
+              Tips for Your Goals ({userProfile.age}yo, {userProfile.weight}kg)
             </h4>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
